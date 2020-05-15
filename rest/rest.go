@@ -11,12 +11,8 @@ import (
 
 //StartRestServer start the server at specified port and ip.
 func StartRestServer(ip string, port int, dp types.DataProvider) {
-	go startServer(ip, port, dp)
-}
-
-func startServer(ip string, port int, dp types.DataProvider) {
 	r := registerHandlers(dp)
-	if err := http.ListenAndServe(fmt.Sprintf("http://%s:%d", ip, port), r); err != nil {
+	if err := http.ListenAndServe(fmt.Sprintf("%s:%d", ip, port), r); err != nil {
 		log.Println("[Error] http server failed:", err)
 	}
 
