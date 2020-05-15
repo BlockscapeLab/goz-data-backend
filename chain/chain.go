@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/BlockscapeLab/goz-data-server/chain/types"
+	"github.com/BlockscapeLab/goz-data-backend/chain/types"
 )
 
 type LCDConnector struct {

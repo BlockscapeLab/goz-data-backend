@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/BlockscapeLab/goz-data-server/rest/types"
+	"github.com/BlockscapeLab/goz-data-backend/rest/types"
 	"github.com/gorilla/mux"
 )
 
