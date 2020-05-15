@@ -1,4 +1,4 @@
-module github.com/BlockscapeLab/goz-data-server
+module github.com/BlockscapeLab/goz-data-backend
 
 go 1.13
 
