@@ -63,9 +63,3 @@ type Txs struct {
 	Tx        Tx        `json:"tx"`
 	Timestamp time.Time `json:"timestamp"`
 }
-
-type MsgSend struct {
-	FromAddress string   `json:"from_address"`
-	ToAddress   string   `json:"to_address"`
-	Amount      []Amount `json:"amount"`
-}

@@ -44,22 +44,22 @@ func (c *LCDConnector) GetDoubloonsOfAccount(bech32Addr string) (doubloons, heig
 	return
 }
 
-func (c *LCDConnector) GetTxsOfHeight(height int) (types.TransactionResponse, error) {
+func (c *LCDConnector) GetTxsOfHeight(height int) (*types.TransactionResponse, error) {
 	tr := types.TransactionResponse{}
 	res, err := c.httpClient.Get(fmt.Sprintf("%s/txs?tx.height=%d&limit=100", c.lcdAddress(), height))
 	if err != nil {
-		return tr, err
+		return nil, err
 	}
 
 	defer res.Body.Close()
 
 	bz, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return tr, err
+		return nil, err
 	}
 
 	err = json.Unmarshal(bz, &tr)
-	return tr, err
+	return &tr, err
 }
 
 // GetBlockOfHeight returns block with all necessary data for analysing
@@ -73,7 +73,7 @@ func (c *LCDConnector) GetLatestBlock() (types.BlockResponse, error) {
 
 func (c *LCDConnector) getBlock(b string) (types.BlockResponse, error) {
 	br := types.BlockResponse{}
-	res, err := c.httpClient.Get(fmt.Sprintf("%s/blocks/%s", c.lcdAddress, b))
+	res, err := c.httpClient.Get(fmt.Sprintf("%s/blocks/%s", c.lcdAddress(), b))
 	if err != nil {
 		return br, err
 	}
@@ -107,5 +107,5 @@ func (c *LCDConnector) GetCurrentHeight() (int, error) {
 }
 
 func (c *LCDConnector) lcdAddress() string {
-	return fmt.Sprintf("http://%s:%d")
+	return fmt.Sprintf("http://%s:%d", c.IP, c.Port)
 }
