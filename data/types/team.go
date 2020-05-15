@@ -12,6 +12,7 @@ type TeamDetails struct {
 	NumberOfTransactions int
 	AvgPayedGas          int
 	AvgRequiredGas       int
+	Address              string
 }
 
 type AvailableDoubloons struct {
@@ -32,7 +33,8 @@ type Client struct {
 }
 
 type TeamChart struct {
-	ClientData map[string]ClientData
+	ClientData         map[string]ClientData
+	LastUpdateByClient map[string]int
 }
 
 // ClientData is a map of updateTime as unix seconds mapping the seconds since last update time

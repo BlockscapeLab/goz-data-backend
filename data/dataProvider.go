@@ -2,10 +2,11 @@ package data
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
+	"github.com/BlockscapeLab/goz-data-backend/chain"
 	"github.com/BlockscapeLab/goz-data-backend/data/types"
 	rest "github.com/BlockscapeLab/goz-data-backend/rest/types"
 )
@@ -17,9 +18,10 @@ type DataProvider struct {
 	teams           map[string]types.TeamDetails
 	scoreboard      *types.Scoreboard
 	chartData       map[string]types.TeamChart
+	lcd             *chain.LCDConnector
 }
 
-func NewDataProvider(startTime, endTime string) (*DataProvider, error) {
+func NewDataProvider(startTime, endTime string, lcd *chain.LCDConnector) (*DataProvider, error) {
 	begin, err := time.Parse(time.RFC3339, startTime)
 	if err != nil {
 		return nil, err
@@ -35,7 +37,10 @@ func NewDataProvider(startTime, endTime string) (*DataProvider, error) {
 		teams:           make(map[string]types.TeamDetails),
 		chartData:       make(map[string]types.TeamChart),
 		scoreboard:      &types.Scoreboard{},
+		lcd:             lcd,
 	}
+
+	go dp.crawl()
 
 	return &dp, nil
 }
@@ -53,5 +58,21 @@ func (dp *DataProvider) GetTeamDetailsJSON(chainID string) ([]byte, error) {
 }
 
 func (dp *DataProvider) GetTeamChartDataJSON(chainID string) ([]byte, error) {
-	return nil, errors.New("Not implemented")
+	cd, ok := dp.chartData[chainID]
+	if !ok {
+		return nil, rest.NewErrorNotFound(fmt.Sprintf("Couldn't find charts for team with chain ID '%s'", chainID))
+	}
+	return json.MarshalIndent(cd, "", " ")
+}
+
+func (dp *DataProvider) GetTeamsJSON() ([]byte, error) {
+	names := make([]string, 0, len(dp.teams))
+	for name := range dp.teams {
+		names = append(names, name)
+	}
+	return json.MarshalIndent(names, "", " ")
+}
+
+func (dp *DataProvider) GetSyncStateJSON() ([]byte, error) {
+	return []byte(strconv.Itoa(dp.lastSyncedBlock)), nil
 }
