@@ -5,4 +5,6 @@ type DataProvider interface {
 	GetScoreboardJSON() ([]byte, error)
 	GetTeamDetailsJSON(chainID string) ([]byte, error)
 	GetTeamChartDataJSON(chainID string) ([]byte, error)
+	GetTeamsJSON() ([]byte, error)
+	GetSyncStateJSON() ([]byte, error)
 }

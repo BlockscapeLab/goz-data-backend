@@ -21,8 +21,10 @@ func StartRestServer(ip string, port int, dp types.DataProvider) {
 func registerHandlers(dp types.DataProvider) *mux.Router {
 	r := mux.NewRouter()
 	r.HandleFunc("/scoreboard", createScoreboardHandler(dp))
+	r.HandleFunc("/teams", createTeamsHandler(dp))
 	r.HandleFunc("/teams/{chainID}/details", createTeamDetailHandler(dp))
 	r.HandleFunc("/teams/{chainID}/chart", createTeamChartHandler(dp))
+	r.HandleFunc("/syncstate", createSyncStateHandler(dp))
 	return r
 }
 
@@ -48,6 +50,22 @@ func createTeamChartHandler(dp types.DataProvider) http.HandlerFunc {
 	h := func(res http.ResponseWriter, req *http.Request) {
 		vars := mux.Vars(req)
 		bz, err := dp.GetTeamChartDataJSON(vars["chainID"])
+		sendResponse(bz, err, res)
+	}
+	return h
+}
+
+func createTeamsHandler(dp types.DataProvider) http.HandlerFunc {
+	h := func(res http.ResponseWriter, req *http.Request) {
+		bz, err := dp.GetTeamsJSON()
+		sendResponse(bz, err, res)
+	}
+	return h
+}
+
+func createSyncStateHandler(dp types.DataProvider) http.HandlerFunc {
+	h := func(res http.ResponseWriter, req *http.Request) {
+		bz, err := dp.GetSyncStateJSON()
 		sendResponse(bz, err, res)
 	}
 	return h
