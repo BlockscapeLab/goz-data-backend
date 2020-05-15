@@ -6,3 +6,5 @@ This is a data backend for our Game of Zones score board.
 /scoreboard
 /teams/{chainID}/details
 /teams/{chainID}/chart
+/teams
+/syncstate
