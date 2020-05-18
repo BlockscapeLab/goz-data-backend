@@ -10,8 +10,8 @@ type TeamDetails struct {
 	ChainID              string
 	AvailableDoubloons   AvailableDoubloons
 	NumberOfTransactions int
-	AvgPayedGas          int
-	AvgRequiredGas       int
+	TotalPayedGas        int
+	TotalRequiredGas     int
 	Address              string
 }
 
@@ -27,9 +27,6 @@ type Client struct {
 	StartTime            time.Time
 	EndTime              time.Time
 	TrustPeriodInSeconds int
-	NumberOfTransactions int
-	AvgPayedGas          int
-	AvgRequiredGas       int
 }
 
 type TeamChart struct {

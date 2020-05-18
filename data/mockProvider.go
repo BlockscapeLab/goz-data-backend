@@ -41,25 +41,19 @@ func (mp MockProvider) GetScoreboardJSON() ([]byte, error) {
 func (mp MockProvider) GetTeamDetailsJSON(chainID string) ([]byte, error) {
 	clients := []types.Client{}
 	clients = append(clients, types.Client{
-		AvgPayedGas:          45824,
-		AvgRequiredGas:       42853,
 		ClientID:             "abc123",
 		EndBlock:             3000,
 		EndTime:              time.Now(),
 		StartBlock:           2000,
 		StartTime:            time.Now(),
-		NumberOfTransactions: 100,
 		TrustPeriodInSeconds: 600,
 	},
 		types.Client{
-			AvgPayedGas:          45547,
-			AvgRequiredGas:       42273,
 			ClientID:             "def456",
 			EndBlock:             4500,
 			EndTime:              time.Now(),
 			StartBlock:           3000,
 			StartTime:            time.Now(),
-			NumberOfTransactions: 100,
 			TrustPeriodInSeconds: 550,
 		})
 
@@ -68,8 +62,8 @@ func (mp MockProvider) GetTeamDetailsJSON(chainID string) ([]byte, error) {
 			Balance: 104883,
 			Height:  58320,
 		},
-		AvgPayedGas:          45839,
-		AvgRequiredGas:       42949,
+		TotalPayedGas:        45839,
+		TotalRequiredGas:     42949,
 		ChainID:              chainID,
 		Clients:              clients,
 		NumberOfTransactions: 200,

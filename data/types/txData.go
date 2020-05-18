@@ -5,7 +5,7 @@ import (
 )
 
 type TxData struct {
-	Heigth    int
+	Height    int
 	Timestamp time.Time
 	GasWanted int
 	GasUsed   int

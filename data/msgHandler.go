@@ -38,29 +38,32 @@ func txDataFromTx(tx *chainTypes.Txs) types.TxData {
 		GasUsed:   gu,
 		GasWanted: gw,
 		Timestamp: tx.Timestamp,
-		Heigth:    h,
+		Height:    h,
 	}
 }
 
 func (dp *DataProvider) msgHandler(tx *chainTypes.Txs) error {
 	txData := txDataFromTx(tx)
+	teamChainID := ""
 
 	for _, msg := range tx.Tx.Value.Msg {
 		switch msg.Type {
 		case CREATE_CLIENT_MESSAGE:
 			ccm := chainTypes.MsgCreateClient{}
-			if err := json.Unmarshal(msg.Value, &ccm); err != nil {
+			var err error
+			if err = json.Unmarshal(msg.Value, &ccm); err != nil {
 				return err
 			}
-			if err := dp.handleCreateClientMsg(ccm, txData); err != nil {
+			if teamChainID, err = dp.handleCreateClientMsg(ccm, txData); err != nil {
 				return err
 			}
 		case UPDATE_CLIENT_MESSAGE:
+			var err error
 			ucm := chainTypes.MsgUpdateClient{}
-			if err := json.Unmarshal(msg.Value, &ucm); err != nil {
+			if err = json.Unmarshal(msg.Value, &ucm); err != nil {
 				return err
 			}
-			if err := dp.handleUpdateClientMsg(ucm, txData); err != nil {
+			if teamChainID, err = dp.handleUpdateClientMsg(ucm, txData); err != nil {
 				return err
 			}
 		case SEND_MESSAGE:
@@ -75,14 +78,14 @@ func (dp *DataProvider) msgHandler(tx *chainTypes.Txs) error {
 			log.Println("Encountered unhandled message type", msg.Type)
 		}
 	}
-	return nil
+
+	return dp.applyTxDataToTeam(txData, teamChainID)
 }
 
-func (dp *DataProvider) handleCreateClientMsg(msg chainTypes.MsgCreateClient, txData types.TxData) error {
+func (dp *DataProvider) handleCreateClientMsg(msg chainTypes.MsgCreateClient, txData types.TxData) (string, error) {
 	chainID := msg.Header.SignedHeader.Header.ChainID
 	clientID := msg.ClientID
 	creationTime := int(txData.Timestamp.Unix())
-	// address := msg.Address
 
 	teamChart, ok := dp.chartData[chainID]
 	if !ok {
@@ -109,30 +112,71 @@ func (dp *DataProvider) handleCreateClientMsg(msg chainTypes.MsgCreateClient, tx
 		teamChart.ClientData[clientID] = cd
 		teamChart.LastUpdateByClient[clientID] = creationTime
 	}
-	// TODO tema details
 
-	return nil
+	team, ok := dp.teams[chainID]
+	if !ok {
+		//create  new team
+		team = types.TeamDetails{
+			Address: msg.Address,
+			AvailableDoubloons: types.AvailableDoubloons{
+				Balance: 1250000,
+				Height:  0,
+			},
+			ChainID:              chainID,
+			NumberOfTransactions: 1,
+			Clients:              make([]types.Client, 0),
+		}
+	}
+
+	trustPerNano, _ := strconv.Atoi(msg.TrustingPeriod)
+
+	team.Clients = append(team.Clients, types.Client{
+		ClientID:             clientID,
+		TrustPeriodInSeconds: trustPerNano / 1000000000,
+	})
+
+	dp.teams[chainID] = team
+
+	return chainID, nil
 }
 
-func (dp *DataProvider) handleUpdateClientMsg(msg chainTypes.MsgUpdateClient, txData types.TxData) error {
-	// addr := msg.Address
+func (dp *DataProvider) handleUpdateClientMsg(msg chainTypes.MsgUpdateClient, txData types.TxData) (string, error) {
 	clientID := msg.ClientID
 	chainID := msg.Header.SignedHeader.Header.ChainID
 	updateTime := txData.Timestamp
 
 	teamChart, ok := dp.chartData[chainID]
 	if !ok {
-		return fmt.Errorf("Received an update_client for unknown team with chainID '%s'. update_client is never the first message of a team.", chainID)
+		return "", fmt.Errorf("Received an update_client for unknown team with chainID '%s'. update_client is never the first message of a team.", chainID)
 	}
 
 	clientData, ok := teamChart.ClientData[clientID]
 	if !ok {
-		return fmt.Errorf("Received an update_client for unknown client '%s'. A create-client should have happened before.", clientID)
+		return "", fmt.Errorf("Received an update_client for unknown client '%s'. A create-client should have happened before.", clientID)
 	}
 
 	timeOfLastUpdate, ok := teamChart.LastUpdateByClient[clientID]
 	if !ok {
-		return fmt.Errorf("Received an update_client for client '%s' with no recorded previous update.", clientID)
+		return "", fmt.Errorf("Received an update_client for client '%s' with no recorded previous update.", clientID)
+	}
+
+	team, ok := dp.teams[chainID]
+	if !ok {
+		return "", fmt.Errorf("Received update_client but couldn't find team details")
+	}
+
+	found := false
+	for i, c := range team.Clients {
+		if c.ClientID == clientID {
+			found = true
+			c.EndBlock = txData.Height
+			c.EndTime = txData.Timestamp
+			team.Clients[i] = c
+			break
+		}
+	}
+	if !found {
+		return "", fmt.Errorf("Received update_client but couldn't find client in team details")
 	}
 
 	unix := int(updateTime.Unix())
@@ -141,10 +185,32 @@ func (dp *DataProvider) handleUpdateClientMsg(msg chainTypes.MsgUpdateClient, tx
 	clientData[unix] = timeSinceLastUpdate
 	teamChart.LastUpdateByClient[clientID] = unix
 
-	// TODO update team details
-	return nil
+	return chainID, nil
 }
 
 func (dp *DataProvider) handleSendMsg(msg chainTypes.MsgSend, txData types.TxData) error {
+	return nil
+}
+
+func (dp *DataProvider) applyTxDataToTeam(txd types.TxData, teamChainID string) error {
+	team, ok := dp.teams[teamChainID]
+	if !ok {
+		return fmt.Errorf("Couldn't update team %s. Team not found in map", teamChainID)
+	}
+
+	team.TotalPayedGas = team.TotalPayedGas + txd.GasWanted
+	team.TotalRequiredGas = team.TotalRequiredGas + txd.GasUsed
+	team.NumberOfTransactions = team.NumberOfTransactions + 1
+
+	bal, height, err := dp.lcd.GetDoubloonsOfAccount(team.Address)
+	if err != nil {
+		return err
+	}
+	team.AvailableDoubloons = types.AvailableDoubloons{
+		Balance: bal,
+		Height:  height,
+	}
+
+	dp.teams[teamChainID] = team
 	return nil
 }
