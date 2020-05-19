@@ -2,8 +2,10 @@ package chain
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -27,17 +29,11 @@ func CreateLCDConnector(lcdIP string, lcdPort int) (*LCDConnector, error) {
 
 // GetDubloonsOfAccount returns the current amount of dubloons the specified account owns. Should only be called when account is executing a transaction in phase 1
 func (c *LCDConnector) GetDoubloonsOfAccount(bech32Addr string) (doubloons, height int, err error) {
-	res, err := c.httpClient.Get(fmt.Sprintf("%s/bank/balances/%s", c.lcdAddress(), bech32Addr))
+	bz, err := c.get(fmt.Sprintf("%s/bank/balances/%s", c.lcdAddress(), bech32Addr))
 	if err != nil {
 		return 0, 0, err
 	}
 
-	defer res.Body.Close()
-
-	bz, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return 0, 0, err
-	}
 	br := types.BalanceResponse{}
 	err = json.Unmarshal(bz, &br)
 	doubloons, height = br.GetDoubloonsAtCurrentHeight()
@@ -46,14 +42,7 @@ func (c *LCDConnector) GetDoubloonsOfAccount(bech32Addr string) (doubloons, heig
 
 func (c *LCDConnector) GetTxsOfHeight(height int) (*types.TransactionResponse, error) {
 	tr := types.TransactionResponse{}
-	res, err := c.httpClient.Get(fmt.Sprintf("%s/txs?tx.height=%d&limit=100", c.lcdAddress(), height))
-	if err != nil {
-		return nil, err
-	}
-
-	defer res.Body.Close()
-
-	bz, err := ioutil.ReadAll(res.Body)
+	bz, err := c.get(fmt.Sprintf("%s/txs?tx.height=%d&limit=100", c.lcdAddress(), height))
 	if err != nil {
 		return nil, err
 	}
@@ -73,14 +62,7 @@ func (c *LCDConnector) GetLatestBlock() (types.BlockResponse, error) {
 
 func (c *LCDConnector) getBlock(b string) (types.BlockResponse, error) {
 	br := types.BlockResponse{}
-	res, err := c.httpClient.Get(fmt.Sprintf("%s/blocks/%s", c.lcdAddress(), b))
-	if err != nil {
-		return br, err
-	}
-
-	defer res.Body.Close()
-
-	bz, err := ioutil.ReadAll(res.Body)
+	bz, err := c.get(fmt.Sprintf("%s/blocks/%s", c.lcdAddress(), b))
 	if err != nil {
 		return br, err
 	}
@@ -104,6 +86,25 @@ func (c *LCDConnector) GetCurrentHeight() (int, error) {
 		h, err := strconv.Atoi(lh)
 		return h, err
 	}
+}
+
+func (c *LCDConnector) get(path string) ([]byte, error) {
+	res, err := c.httpClient.Get(path)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	bz, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if res.StatusCode != 200 {
+		log.Printf("Couldn't get '%s'. StatusCode: %d. %s\n", path, res.StatusCode, string(bz))
+		return bz, errors.New("Non 200 status code")
+	}
+	return bz, nil
 }
 
 func (c *LCDConnector) lcdAddress() string {
