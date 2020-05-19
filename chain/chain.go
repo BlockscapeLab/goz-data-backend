@@ -40,7 +40,7 @@ func (c *LCDConnector) GetDoubloonsOfAccount(bech32Addr string) (doubloons, heig
 	}
 	br := types.BalanceResponse{}
 	err = json.Unmarshal(bz, &br)
-	doubloons, height = br.GetDubloonsAtCurrentHeight()
+	doubloons, height = br.GetDoubloonsAtCurrentHeight()
 	return
 }
 
