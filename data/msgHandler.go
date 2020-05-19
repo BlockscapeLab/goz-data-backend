@@ -79,7 +79,11 @@ func (dp *DataProvider) msgHandler(tx *chainTypes.Txs) error {
 		}
 	}
 
-	return dp.applyTxDataToTeam(txData, teamChainID)
+	if err := dp.applyTxDataToTeam(txData, teamChainID); err != nil {
+		log.Printf("couldn't update team %s. Will try at a later time: %s\n", teamChainID, err)
+	}
+
+	return nil
 }
 
 func (dp *DataProvider) handleCreateClientMsg(msg chainTypes.MsgCreateClient, txData types.TxData) (string, error) {
