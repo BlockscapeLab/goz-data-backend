@@ -27,7 +27,7 @@ func CreateLCDConnector(lcdIP string, lcdPort int) (*LCDConnector, error) {
 
 // GetDubloonsOfAccount returns the current amount of dubloons the specified account owns. Should only be called when account is executing a transaction in phase 1
 func (c *LCDConnector) GetDoubloonsOfAccount(bech32Addr string) (doubloons, height int, err error) {
-	res, err := c.httpClient.Get(fmt.Sprintf("%s/bank/balances/%s", c.lcdAddress, bech32Addr))
+	res, err := c.httpClient.Get(fmt.Sprintf("%s/bank/balances/%s", c.lcdAddress(), bech32Addr))
 	if err != nil {
 		return 0, 0, err
 	}

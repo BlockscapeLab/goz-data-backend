@@ -13,7 +13,7 @@ func (dp *DataProvider) crawl() {
 			time.Sleep(5 * time.Second)
 			continue
 		}
-		from := 37823 // dp.lastSyncedBlock + 1
+		from := dp.lastSyncedBlock + 1
 		log.Printf("Starting crawl from block %d to %d...\n", from, max)
 		for h := from; h <= max; h++ {
 			err := dp.getBlockData(h)
@@ -52,6 +52,8 @@ func (dp *DataProvider) getBlockData(height int) error {
 		}
 
 	}
+
+	// check for dead clients
 
 	// for each tx check involved accounts balance
 
