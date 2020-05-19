@@ -137,6 +137,8 @@ func (dp *DataProvider) handleCreateClientMsg(msg chainTypes.MsgCreateClient, tx
 	team.Clients = append(team.Clients, types.Client{
 		ClientID:             clientID,
 		TrustPeriodInSeconds: trustPerNano / 1000000000,
+		StartTime:            txData.Timestamp,
+		StartBlock:           txData.Height,
 	})
 
 	dp.teams[chainID] = team
