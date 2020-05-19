@@ -50,8 +50,8 @@ func (dp *DataProvider) getBlockData(height int) error {
 		if err := dp.msgHandler(&tx); err != nil {
 			return err
 		}
-
 	}
+	dp.lastSyncedBlock = height
 
 	// check for dead clients
 
