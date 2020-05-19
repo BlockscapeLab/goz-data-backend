@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"time"
 
 	chainTypes "github.com/BlockscapeLab/goz-data-backend/chain/types"
 	"github.com/BlockscapeLab/goz-data-backend/data/types"
@@ -139,6 +140,8 @@ func (dp *DataProvider) handleCreateClientMsg(msg chainTypes.MsgCreateClient, tx
 		TrustPeriodInSeconds: trustPerNano / 1000000000,
 		StartTime:            txData.Timestamp,
 		StartBlock:           txData.Height,
+		EndTime:              txData.Timestamp.Add(time.Nanosecond * time.Duration(trustPerNano)),
+		EndBlock:             txData.Height,
 	})
 
 	dp.teams[chainID] = team
@@ -176,7 +179,7 @@ func (dp *DataProvider) handleUpdateClientMsg(msg chainTypes.MsgUpdateClient, tx
 		if c.ClientID == clientID {
 			found = true
 			c.EndBlock = txData.Height
-			c.EndTime = txData.Timestamp
+			c.EndTime = txData.Timestamp.Add(time.Second * time.Duration(c.TrustPeriodInSeconds))
 			team.Clients[i] = c
 			break
 		}
