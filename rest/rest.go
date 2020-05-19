@@ -30,7 +30,6 @@ func registerHandlers(dp types.DataProvider) *mux.Router {
 
 func createScoreboardHandler(dp types.DataProvider) http.HandlerFunc {
 	h := func(res http.ResponseWriter, req *http.Request) {
-		res.Header().Set("Access-Control-Allow-Origin", "*")
 		bz, err := dp.GetScoreboardJSON()
 		sendResponse(bz, err, res)
 	}
@@ -40,7 +39,6 @@ func createScoreboardHandler(dp types.DataProvider) http.HandlerFunc {
 
 func createTeamDetailHandler(dp types.DataProvider) http.HandlerFunc {
 	h := func(res http.ResponseWriter, req *http.Request) {
-		res.Header().Set("Access-Control-Allow-Origin", "*")
 		vars := mux.Vars(req)
 		bz, err := dp.GetTeamDetailsJSON(vars["chainID"])
 		sendResponse(bz, err, res)
@@ -50,7 +48,6 @@ func createTeamDetailHandler(dp types.DataProvider) http.HandlerFunc {
 
 func createTeamChartHandler(dp types.DataProvider) http.HandlerFunc {
 	h := func(res http.ResponseWriter, req *http.Request) {
-		res.Header().Set("Access-Control-Allow-Origin", "*")
 		vars := mux.Vars(req)
 		bz, err := dp.GetTeamChartDataJSON(vars["chainID"])
 		sendResponse(bz, err, res)
@@ -75,6 +72,7 @@ func createSyncStateHandler(dp types.DataProvider) http.HandlerFunc {
 }
 
 func sendResponse(bz []byte, err error, res http.ResponseWriter) {
+	res.Header().Set("Access-Control-Allow-Origin", "*")
 	if err != nil {
 		res.WriteHeader(types.GetStatusCode(err))
 		res.Write([]byte(err.Error()))
